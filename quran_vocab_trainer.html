@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quran Vocab Trainer</title>
+<!--
+  ============================================================
+  QURAN VOCABULARY TRAINER
+  Words sourced ONLY from:
+  "The Top 500 Words" - Yaqeen Books / Quran Memorization Guide
+  © Yaqeen Books 2022 — www.yaqeenbooks.com
+
+  Each word entry:
+  - wordNumber:      PDF number (e.g. #1)
+  - arabic:          Arabic text
+  - transliteration: Romanized pronunciation
+  - english:         Meaning from the PDF
+  - occurrences:     Times in Quran (from PDF)
+  - ayah_ar:         Example Quran verse in Arabic
+  - ayah_en:         Translation of the verse
+  - ref:             Surah:Verse reference
+
+  TO ADD MORE WORDS: Follow the same format below.
+  Only add words verified in the PDF.
+  ============================================================
+-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--gold:#c9a84c;--gold-light:#e8c97a;--green:#4caf82;--red:#e05252;--text:#f0ead6;--text-dim:#8a8fa8;--border:#2e3450}
+  body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px;background-image:radial-gradient(ellipse at 20% 20%,rgba(201,168,76,.06) 0%,transparent 60%)}
+  .header{text-align:center;margin-bottom:18px}
+  .header h1{font-family:'Amiri',serif;font-size:30px;color:var(--gold)}
+  .header p{color:var(--text-dim);font-size:12px;margin-top:4px}
+  .badge{display:inline-block;font-size:9px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);padding:2px 8px;border-radius:20px;margin-top:8px}
+  .nav{display:flex;gap:8px;margin-bottom:18px;background:var(--surface);border-radius:12px;padding:5px;border:1px solid var(--border)}
+  .nav button{padding:8px 18px;border-radius:8px;border:none;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;background:transparent;color:var(--text-dim)}
+  .nav button.active{background:var(--gold);color:#0f1117}
+  .progress-bar{width:100%;max-width:480px;height:4px;background:var(--surface2);border-radius:2px;margin-bottom:14px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:2px;transition:width .4s ease}
+  .stats-row{display:flex;gap:8px;margin-bottom:14px;width:100%;max-width:480px}
+  .stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center}
+  .stat-num{font-size:20px;font-weight:600;color:var(--gold)}
+  .stat-label{font-size:10px;color:var(--text-dim);margin-top:2px}
+  .card{width:100%;max-width:480px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 18px;margin-bottom:12px;position:relative;overflow:hidden}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+  .word-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .word-number{font-size:10px;color:var(--text-dim);font-weight:500;letter-spacing:1px;text-transform:uppercase}
+  .word-occ{font-size:10px;color:var(--gold);font-weight:500}
+  .arabic-word{font-family:'Amiri',serif;font-size:52px;text-align:center;color:var(--gold-light);margin:6px 0;line-height:1.2;direction:rtl}
+  .translit{text-align:center;color:var(--text-dim);font-size:12px;margin-bottom:10px;font-style:italic}
+  .ayah-box{background:var(--surface2);border-radius:10px;padding:12px 13px;margin:10px 0;border-left:3px solid var(--gold)}
+  .ayah-ar{font-family:'Amiri',serif;font-size:16px;direction:rtl;text-align:right;color:var(--text);line-height:1.9;margin-bottom:6px}
+  .ayah-en{font-size:11px;color:var(--text-dim);font-style:italic;line-height:1.6}
+  .ayah-ref{font-size:10px;color:var(--gold);margin-top:5px;font-weight:500}
+  .question{font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:12px}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .choice-btn{padding:12px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;text-align:center;line-height:1.3}
+  .choice-btn:hover:not(:disabled){border-color:var(--gold);background:rgba(201,168,76,.08)}
+  .choice-btn.correct{border-color:var(--green)!important;background:rgba(76,175,130,.15)!important;color:var(--green)!important}
+  .choice-btn.wrong{border-color:var(--red)!important;background:rgba(224,82,82,.15)!important;color:var(--red)!important}
+  .choice-btn:disabled{cursor:default}
+  .feedback{text-align:center;font-size:13px;margin-bottom:8px;min-height:18px;font-weight:500}
+  .feedback.correct{color:var(--green)}
+  .feedback.wrong{color:var(--red)}
+  .next-btn{width:100%;max-width:480px;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0f1117;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:none}
+  .next-btn.visible{display:block}
+  .complete-card{width:100%;max-width:480px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:34px 22px;text-align:center}
+  .complete-emoji{font-size:42px;margin-bottom:12px}
+  .complete-title{font-size:20px;font-weight:600;color:var(--gold);margin-bottom:8px}
+  .complete-sub{color:var(--text-dim);font-size:13px;margin-bottom:18px;line-height:1.6}
+  .score-big{font-size:46px;font-weight:600;color:var(--gold-light)}
+  .score-label{color:var(--text-dim);font-size:12px;margin-bottom:18px}
+  .action-btn{width:100%;padding:12px;border-radius:10px;border:none;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px}
+  .action-btn.primary{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0f1117}
+  .action-btn.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+  .test-intro{width:100%;max-width:480px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 22px;text-align:center}
+  .test-intro h2{font-size:18px;color:var(--gold);margin-bottom:10px}
+  .test-intro p{color:var(--text-dim);font-size:13px;line-height:1.6;margin-bottom:18px}
+  .result-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;margin-bottom:6px;background:var(--surface2);text-align:left}
+  .result-arabic{font-family:'Amiri',serif;font-size:20px;color:var(--gold-light);direction:rtl;min-width:55px;text-align:right}
+  .result-info{flex:1}
+  .result-english{font-size:12px;color:var(--text)}
+  .result-ref{font-size:10px;color:var(--text-dim);margin-top:2px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>مُفردات القرآن</h1>
+  <p>Quranic Vocabulary Trainer · 20 min/day · In Sha Allah</p>
+  <div class="badge">Words from: The Top 500 Words — Yaqeen Books</div>
+</div>
+<div class="nav">
+  <button class="active" onclick="showMode('learn')" id="nav-learn">Learn</button>
+  <button onclick="showMode('test')" id="nav-test">Daily Test</button>
+</div>
+<div id="learn-mode">
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="stats-row">
+    <div class="stat"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Session</div></div>
+    <div class="stat"><div class="stat-num" id="stat-correct">0</div><div class="stat-label">Correct</div></div>
+    <div class="stat"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">Streak</div></div>
+    <div class="stat"><div class="stat-num" id="stat-learned">0</div><div class="stat-label">Learned</div></div>
+  </div>
+  <div class="card" id="flash-card">
+    <div class="word-meta">
+      <div class="word-number" id="word-number">WORD 1 OF 10</div>
+      <div class="word-occ" id="word-occ"></div>
+    </div>
+    <div class="arabic-word" id="arabic-word"></div>
+    <div class="translit" id="translit"></div>
+    <div class="ayah-box">
+      <div class="ayah-ar" id="ayah-ar"></div>
+      <div class="ayah-en" id="ayah-en"></div>
+      <div class="ayah-ref" id="ayah-ref"></div>
+    </div>
+    <div class="question">What does this word mean?</div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+  <button class="next-btn" id="next-btn" onclick="nextWord()">Next Word</button>
+  <div class="complete-card hidden" id="session-complete">
+    <div class="complete-emoji">🌙</div>
+    <div class="complete-title">Session Complete!</div>
+    <div class="complete-sub" id="complete-sub"></div>
+    <div class="score-big" id="final-score"></div>
+    <div class="score-label">Correct this session</div><br>
+    <button class="action-btn primary" onclick="startSession()">Continue Learning</button>
+    <button class="action-btn secondary" onclick="showMode('test')">Take Daily Test</button>
+  </div>
+</div>
+<div id="test-mode" class="hidden">
+  <div class="test-intro" id="test-intro">
+    <h2>Daily Test</h2>
+    <p>Test yourself on all words you have learned. This is what locks them in your memory — In Sha Allah.</p>
+    <div class="score-big" id="learned-count">0</div>
+    <div class="score-label">Words ready to test</div><br>
+    <button class="action-btn primary" onclick="startTest()">Start Test</button>
+  </div>
+  <div id="test-session" class="hidden">
+    <div class="progress-bar"><div class="progress-fill" id="test-progress-fill"></div></div>
+    <div class="card">
+      <div class="word-meta">
+        <div class="word-number" id="test-word-number">QUESTION 1</div>
+        <div class="word-occ" id="test-word-occ"></div>
+      </div>
+      <div class="arabic-word" id="test-arabic-word"></div>
+      <div class="translit" id="test-translit"></div>
+      <div class="question">What does this word mean?</div>
+      <div class="choices" id="test-choices"></div>
+      <div class="feedback" id="test-feedback"></div>
+    </div>
+    <button class="next-btn" id="test-next-btn" onclick="nextTestWord()">Next</button>
+  </div>
+  <div class="complete-card hidden" id="test-complete">
+    <div class="complete-emoji">⭐</div>
+    <div class="complete-title">Test Complete!</div>
+    <div class="score-big" id="test-final-score"></div>
+    <div class="score-label">Your Score</div><br>
+    <div id="test-results" style="max-height:300px;overflow-y:auto;"></div><br>
+    <button class="action-btn primary" onclick="showMode('learn')">Back to Learning</button>
+  </div>
+</div>
+<script>
+const WORDS=[
+  {wordNumber:"#1",arabic:"هَذَا",transliteration:"Hadha",english:"This (masculine)",occurrences:182,ayah_ar:"هَٰذَا بَيَانٌ لِّلنَّاسِ",ayah_en:"This is a clear statement for the people",ref:"Al-Imran 3:138"},
+  {wordNumber:"#2",arabic:"ذَٰلِكَ",transliteration:"Dhalika",english:"That",occurrences:461,ayah_ar:"ذَٰلِكَ الْكِتَابُ لَا رَيْبَ فِيهِ",ayah_en:"That is the Book about which there is no doubt",ref:"Al-Baqarah 2:2"},
+  {wordNumber:"#3",arabic:"هَٰذِهِ",transliteration:"Hadhihi",english:"This (feminine)",occurrences:46,ayah_ar:"هَٰذِهِ جَهَنَّمُ الَّتِي يُكَذِّبُ بِهَا الْمُجْرِمُونَ",ayah_en:"This is Hellfire which the criminals used to deny",ref:"Ar-Rahman 55:43"},
+  {wordNumber:"#4",arabic:"تِلْكَ",transliteration:"Tilka",english:"That (feminine)",occurrences:28,ayah_ar:"تِلْكَ آيَاتُ اللَّهِ نَتْلُوهَا عَلَيْكَ بِالْحَقِّ",ayah_en:"These are the verses of Allah which We recite to you in truth",ref:"Al-Baqarah 2:252"},
+  {wordNumber:"#5",arabic:"هَٰؤُلَاءِ",transliteration:"Haulai",english:"These",occurrences:40,ayah_ar:"هَٰؤُلَاءِ قَوْمُنَا اتَّخَذُوا مِن دُونِهِ آلِهَةً",ayah_en:"These, our people, have taken gods besides Him",ref:"Al-Kahf 18:15"},
+  {wordNumber:"#6",arabic:"أُولَٰئِكَ",transliteration:"Ulaika",english:"Those",occurrences:130,ayah_ar:"أُولَٰئِكَ عَلَىٰ هُدًى مِّن رَّبِّهِمْ",ayah_en:"Those are upon guidance from their Lord",ref:"Al-Baqarah 2:5"},
+  {wordNumber:"#7",arabic:"الَّذِي",transliteration:"Alladhi",english:"He who / That which",occurrences:258,ayah_ar:"الْحَمْدُ لِلَّهِ الَّذِي خَلَقَ السَّمَاوَاتِ وَالْأَرْضَ",ayah_en:"Praise to Allah who created the heavens and the earth",ref:"Al-An'am 6:1"},
+  {wordNumber:"#8",arabic:"الَّتِي",transliteration:"Allati",english:"She who / That which (feminine)",occurrences:56,ayah_ar:"وَالَّتِي أَحْصَنَتْ فَرْجَهَا",ayah_en:"And she who guarded her chastity",ref:"Al-Anbiya 21:91"},
+  {wordNumber:"#9",arabic:"الَّذِينَ",transliteration:"Alladhina",english:"Those who",occurrences:738,ayah_ar:"الَّذِينَ يُؤْمِنُونَ بِالْغَيْبِ",ayah_en:"Those who believe in the unseen",ref:"Al-Baqarah 2:3"},
+  {wordNumber:"#15",arabic:"كَلَّا",transliteration:"Kalla",english:"No! / Certainly not! / Nay!",occurrences:38,ayah_ar:"كَلَّا إِنَّ الْإِنسَانَ لَيَطْغَىٰ",ayah_en:"No! Indeed, man transgresses",ref:"Al-Alaq 96:6"},
+  {wordNumber:"#16",arabic:"لَنْ",transliteration:"Lan",english:"Will not (future negation)",occurrences:59,ayah_ar:"لَن تَنَالُوا الْبِرَّ حَتَّىٰ تُنفِقُوا مِمَّا تُحِبُّونَ",ayah_en:"Never will you attain the good until you spend from what you love",ref:"Al-Imran 3:92"},
+  {wordNumber:"#17",arabic:"لَمْ",transliteration:"Lam",english:"Did not (past negation)",occurrences:172,ayah_ar:"لَمْ يَلِدْ وَلَمْ يُولَدْ",ayah_en:"He neither begets nor is He born",ref:"Al-Ikhlas 112:3"},
+  {wordNumber:"#18",arabic:"مَا",transliteration:"Ma",english:"Not / What / That which",occurrences:890,ayah_ar:"مَا أَصَابَكَ مِنْ حَسَنَةٍ فَمِنَ اللَّهِ",ayah_en:"What comes to you of good is from Allah",ref:"An-Nisa 4:79"},
+  {wordNumber:"#19",arabic:"لَيْسَ",transliteration:"Laysa",english:"Is not / There is not",occurrences:45,ayah_ar:"لَيْسَ لَهُم مِّن دُونِهِ وَلِيٌّ",ayah_en:"There is not for them besides Him any protector",ref:"Ar-Ra'd 13:34"},
+  {wordNumber:"#20",arabic:"بَلَىٰ",transliteration:"Bala",english:"Yes / Indeed (affirmative)",occurrences:22,ayah_ar:"بَلَىٰ مَن أَسْلَمَ وَجْهَهُ لِلَّهِ",ayah_en:"Yes, whoever submits his face to Allah",ref:"Al-Baqarah 2:112"},
+  {wordNumber:"#21",arabic:"غَيْرُ",transliteration:"Ghayr",english:"Other than / Not",occurrences:69,ayah_ar:"صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ",ayah_en:"The path of those upon whom You bestowed favor, not of those who earned anger",ref:"Al-Fatihah 1:7"},
+  {wordNumber:"#22",arabic:"دُونَ",transliteration:"Duna",english:"Besides / Other than",occurrences:90,ayah_ar:"وَمَا لَهُم مِّن دُونِهِ مِن وَلِيٍّ",ayah_en:"And they have no protector besides Him",ref:"Ar-Ra'd 13:34"},
+  {wordNumber:"#23",arabic:"إِلَّا",transliteration:"Illa",english:"Except / Only",occurrences:680,ayah_ar:"وَمَا خَلَقْتُ الْجِنَّ وَالْإِنسَ إِلَّا لِيَعْبُدُونِ",ayah_en:"And I did not create the jinn and mankind except to worship Me",ref:"Adh-Dhariyat 51:56"},
+  {wordNumber:"#25",arabic:"هُ / هِ",transliteration:"Hu / Hi",english:"His / Him (pronoun suffix)",occurrences:4906,ayah_ar:"قُلْ هُوَ اللَّهُ أَحَدٌ",ayah_en:"Say: He is Allah, the One",ref:"Al-Ikhlas 112:1"},
+  {wordNumber:"#26",arabic:"هُمْ",transliteration:"Hum",english:"They (masculine plural)",occurrences:257,ayah_ar:"وَهُمْ فِيهَا خَالِدُونَ",ayah_en:"And they will abide therein forever",ref:"Al-Baqarah 2:25"},
+  {wordNumber:"#36",arabic:"هُوَ",transliteration:"Huwa",english:"He",occurrences:244,ayah_ar:"قُلْ هُوَ اللَّهُ أَحَدٌ",ayah_en:"Say: He is Allah, the One",ref:"Al-Ikhlas 112:1"},
+  {wordNumber:"#37",arabic:"أَنتَ",transliteration:"Anta",english:"You (singular masculine)",occurrences:55,ayah_ar:"أَنتَ وَلِيُّنَا فَاغْفِرْ لَنَا",ayah_en:"You are our protector, so forgive us",ref:"Al-A'raf 7:155"},
+  {wordNumber:"#38",arabic:"أَنتُمْ",transliteration:"Antum",english:"You all (plural)",occurrences:78,ayah_ar:"أَنتُمُ الْفُقَرَاءُ إِلَى اللَّهِ",ayah_en:"You are those in need of Allah",ref:"Fatir 35:15"},
+  {wordNumber:"#39",arabic:"أَنَا",transliteration:"Ana",english:"I",occurrences:430,ayah_ar:"إِنَّنِي أَنَا اللَّهُ لَا إِلَٰهَ إِلَّا أَنَا",ayah_en:"Indeed, I am Allah. There is no deity except Me",ref:"Ta-Ha 20:14"},
+  {wordNumber:"#40",arabic:"نَحْنُ",transliteration:"Nahnu",english:"We",occurrences:62,ayah_ar:"إِنَّا نَحْنُ نَزَّلْنَا الذِّكْرَ",ayah_en:"Indeed, it is We who sent down the Quran",ref:"Al-Hijr 15:9"},
+  {wordNumber:"#41",arabic:"هِيَ",transliteration:"Hiya",english:"She / It",occurrences:47,ayah_ar:"نَارُ اللَّهِ الْمُوقَدَةُ الَّتِي تَطَّلِعُ عَلَى الْأَفْئِدَةِ",ayah_en:"The fire of Allah, kindled, which mounts over the hearts",ref:"Al-Humazah 104:6-7"},
+  {wordNumber:"#47",arabic:"فَوْقَ",transliteration:"Fawqa",english:"Above / Over",occurrences:15,ayah_ar:"وَهُوَ الْقَاهِرُ فَوْقَ عِبَادِهِ",ayah_en:"And He is the subjugator over His servants",ref:"Al-An'am 6:18"},
+  {wordNumber:"#48",arabic:"تَحْتَ",transliteration:"Tahta",english:"Under / Below / Beneath",occurrences:7,ayah_ar:"تَجْرِي مِن تَحْتِهَا الْأَنْهَارُ",ayah_en:"Beneath which rivers flow",ref:"Al-Baqarah 2:25"},
+  {wordNumber:"#50",arabic:"خَلْفَ",transliteration:"Khalfa",english:"Behind / After",occurrences:2,ayah_ar:"يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ",ayah_en:"He knows what is before them and what is behind them",ref:"Al-Baqarah 2:255"},
+  {wordNumber:"#52",arabic:"وَرَاءَ",transliteration:"Wara",english:"Behind / Beyond",occurrences:12,ayah_ar:"وَكَانَ وَرَاءَهُم مَّلِكٌ يَأْخُذُ كُلَّ سَفِينَةٍ غَصْبًا",ayah_en:"And there was behind them a king who seized every good ship by force",ref:"Al-Kahf 18:79"},
+  {wordNumber:"#55",arabic:"بَيْنَ",transliteration:"Bayna",english:"Between / Among",occurrences:76,ayah_ar:"وَجَعَلْنَا بَيْنَكُمْ مَوَدَّةً وَرَحْمَةً",ayah_en:"And He placed between you affection and mercy",ref:"Ar-Rum 30:21"},
+  {wordNumber:"#57",arabic:"حَيْثُ",transliteration:"Haythu",english:"Wherever / Where",occurrences:28,ayah_ar:"فَوَلِّ وَجْهَكَ شَطْرَ الْمَسْجِدِ الْحَرَامِ وَحَيْثُ مَا كُنتُمْ",ayah_en:"Turn your face toward the Sacred Mosque, and wherever you are",ref:"Al-Baqarah 2:144"},
+  {wordNumber:"#60",arabic:"مَنْ",transliteration:"Man",english:"Who? / Whoever",occurrences:2023,ayah_ar:"مَن جَاءَ بِالْحَسَنَةِ فَلَهُ عَشْرُ أَمْثَالِهَا",ayah_en:"Whoever comes with a good deed will have ten times the like thereof",ref:"Al-An'am 6:160"},
+  {wordNumber:"#62",arabic:"أَيْنَ",transliteration:"Ayna",english:"Where?",occurrences:14,ayah_ar:"أَيْنَمَا تَكُونُوا يُدْرِككُّمُ الْمَوْتُ",ayah_en:"Wherever you may be, death will overtake you",ref:"An-Nisa 4:78"},
+  {wordNumber:"#63",arabic:"كَيْفَ",transliteration:"Kayfa",english:"How?",occurrences:62,ayah_ar:"أَفَلَا يَنظُرُونَ إِلَى الْإِبِلِ كَيْفَ خُلِقَتْ",ayah_en:"Do they not look at the camels — how they are created?",ref:"Al-Ghashiyah 88:17"},
+  {wordNumber:"#65",arabic:"أَيُّ",transliteration:"Ayyu",english:"Which? / Whichever",occurrences:7,ayah_ar:"أَيُّكُمْ أَحْسَنُ عَمَلًا",ayah_en:"Which of you is best in deed",ref:"Al-Mulk 67:2"},
+  {wordNumber:"#69",arabic:"لِمَ",transliteration:"Lima",english:"Why?",occurrences:172,ayah_ar:"فَلِمَ تَقْتُلُونَ أَنبِيَاءَ اللَّهِ",ayah_en:"Then why did you kill the prophets of Allah?",ref:"Al-Baqarah 2:91"},
+  {wordNumber:"#83",arabic:"قَبْلَ",transliteration:"Qabla",english:"Before",occurrences:118,ayah_ar:"وَلَقَدْ أَرْسَلْنَا رُسُلًا مِّن قَبْلِكَ",ayah_en:"And We have already sent messengers before you",ref:"Al-Mu'min 40:78"},
+  {wordNumber:"#84",arabic:"بَعْدَ",transliteration:"Ba'da",english:"After",occurrences:114,ayah_ar:"فَمَن تَابَ مِن بَعْدِ ظُلْمِهِ وَأَصْلَحَ فَإِنَّ اللَّهَ يَتُوبُ عَلَيْهِ",ayah_en:"But whoever repents after his wrongdoing and reforms — indeed Allah will turn to him in forgiveness",ref:"Al-Ma'idah 5:39"},
+  {wordNumber:"#86",arabic:"إِذْ",transliteration:"Idh",english:"When (past event)",occurrences:156,ayah_ar:"وَإِذْ قَالَ رَبُّكَ لِلْمَلَائِكَةِ إِنِّي جَاعِلٌ فِي الْأَرْضِ خَلِيفَةً",ayah_en:"And when your Lord said to the angels: Indeed I will make upon the earth a successive authority",ref:"Al-Baqarah 2:30"},
+  {wordNumber:"#87",arabic:"إِذَا",transliteration:"Idha",english:"When / If (future)",occurrences:210,ayah_ar:"إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ",ayah_en:"When the victory of Allah has come and the conquest",ref:"An-Nasr 110:1"},
+  {wordNumber:"#88",arabic:"ثُمَّ",transliteration:"Thumma",english:"Then / After that",occurrences:300,ayah_ar:"ثُمَّ إِلَيْهِ تُرْجَعُونَ",ayah_en:"Then to Him you will be returned",ref:"Al-Baqarah 2:28"},
+  {wordNumber:"#89",arabic:"فَ",transliteration:"Fa",english:"Then / Thus / Therefore",occurrences:999,ayah_ar:"فَمَن يَعْمَلْ مِثْقَالَ ذَرَّةٍ خَيْرًا يَرَهُ",ayah_en:"So whoever does an atom's weight of good will see it",ref:"Az-Zalzalah 99:7"},
+  {wordNumber:"#90",arabic:"بَلْ",transliteration:"Bal",english:"Rather / But / However",occurrences:121,ayah_ar:"بَلِ اللَّهُ مَوْلَاكُمْ وَهُوَ خَيْرُ النَّاصِرِينَ",ayah_en:"Rather, Allah is your protector and He is the best of helpers",ref:"Al-Imran 3:150"},
+];
+
+const SESSION_SIZE=10;
+let sessionWords=[],currentIndex=0,correctCount=0,streak=0,totalDone=0;
+let learnedWords=[],answered=false;
+let testWords=[],testIndex=0,testCorrect=0,testAnswered=false,testResults=[];
+
+function showMode(m){
+  document.getElementById('learn-mode').classList.toggle('hidden',m!=='learn');
+  document.getElementById('test-mode').classList.toggle('hidden',m!=='test');
+  document.getElementById('nav-learn').classList.toggle('active',m==='learn');
+  document.getElementById('nav-test').classList.toggle('active',m==='test');
+  if(m==='test'){
+    document.getElementById('learned-count').textContent=learnedWords.length;
+    document.getElementById('test-intro').classList.remove('hidden');
+    document.getElementById('test-session').classList.add('hidden');
+    document.getElementById('test-complete').classList.add('hidden');
+  }
+}
+
+function shuffle(a){return[...a].sort(()=>Math.random()-.5)}
+
+function getWrong(correct,n){
+  return shuffle(WORDS.filter(w=>w.english!==correct.english)).slice(0,n).map(w=>w.english);
+}
+
+function startSession(){
+  document.getElementById('session-complete').classList.add('hidden');
+  document.getElementById('flash-card').classList.remove('hidden');
+  document.getElementById('next-btn').classList.remove('visible');
+  const unlearned=WORDS.filter(w=>!learnedWords.find(l=>l.arabic===w.arabic));
+  const pool=unlearned.length>=SESSION_SIZE?unlearned:WORDS;
+  sessionWords=shuffle(pool).slice(0,Math.min(SESSION_SIZE,pool.length));
+  currentIndex=0;correctCount=0;answered=false;totalDone=0;
+  ['stat-done','stat-correct','stat-streak'].forEach(id=>document.getElementById(id).textContent='0');
+  showWord();
+}
+
+function showWord(){
+  const w=sessionWords[currentIndex];
+  answered=false;
+  document.getElementById('word-number').textContent='WORD '+(currentIndex+1)+' OF '+sessionWords.length;
+  document.getElementById('word-occ').textContent=w.occurrences+'x in Quran';
+  document.getElementById('arabic-word').textContent=w.arabic;
+  document.getElementById('translit').textContent=w.transliteration+' · PDF '+w.wordNumber;
+  document.getElementById('ayah-ar').textContent=w.ayah_ar;
+  document.getElementById('ayah-en').textContent=w.ayah_en;
+  document.getElementById('ayah-ref').textContent=w.ref;
+  document.getElementById('feedback').textContent='';
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('next-btn').classList.remove('visible');
+  document.getElementById('progress-fill').style.width=((currentIndex/sessionWords.length)*100)+'%';
+  const opts=shuffle([w.english,...getWrong(w,3)]);
+  const el=document.getElementById('choices');
+  el.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='choice-btn';b.textContent=o;
+    b.onclick=()=>handleAnswer(b,o,w.english,w);
+    el.appendChild(b);
+  });
+}
+
+function handleAnswer(btn,selected,correct,word){
+  if(answered)return;
+  answered=true;
+  document.querySelectorAll('#choices .choice-btn').forEach(b=>{b.disabled=true;if(b.textContent===correct)b.classList.add('correct');});
+  const fb=document.getElementById('feedback');
+  if(selected===correct){
+    btn.classList.add('correct');
+    fb.textContent='Correct! ما شاء الله';
+    fb.className='feedback correct';
+    correctCount++;streak++;
+    if(!learnedWords.find(l=>l.arabic===word.arabic)){learnedWords.push(word);document.getElementById('stat-learned').textContent=learnedWords.length;}
+  }else{
+    btn.classList.add('wrong');
+    fb.textContent='Answer: '+correct;
+    fb.className='feedback wrong';
+    streak=0;
+  }
+  totalDone++;
+  document.getElementById('stat-done').textContent=totalDone;
+  document.getElementById('stat-correct').textContent=correctCount;
+  document.getElementById('stat-streak').textContent=streak;
+  document.getElementById('next-btn').classList.add('visible');
+}
+
+function nextWord(){
+  currentIndex++;
+  if(currentIndex>=sessionWords.length)showSessionComplete();
+  else showWord();
+}
+
+function showSessionComplete(){
+  document.getElementById('flash-card').classList.add('hidden');
+  document.getElementById('next-btn').classList.remove('visible');
+  document.getElementById('session-complete').classList.remove('hidden');
+  document.getElementById('progress-fill').style.width='100%';
+  document.getElementById('final-score').textContent=correctCount+'/'+sessionWords.length;
+  const p=Math.round((correctCount/sessionWords.length)*100);
+  document.getElementById('complete-sub').textContent=p===100?'Perfect! سبحان الله':p>=70?'Great work! Every word brings you closer to understanding the Quran.':'Keep going. Allah loves consistent effort. In Sha Allah you will get there.';
+}
+
+function startTest(){
+  if(!learnedWords.length){alert('Learn some words first!');return;}
+  document.getElementById('test-intro').classList.add('hidden');
+  document.getElementById('test-session').classList.remove('hidden');
+  document.getElementById('test-complete').classList.add('hidden');
+  testWords=shuffle(learnedWords);
+  testIndex=0;testCorrect=0;testAnswered=false;testResults=[];
+  showTestWord();
+}
+
+function showTestWord(){
+  const w=testWords[testIndex];
+  testAnswered=false;
+  document.getElementById('test-word-number').textContent='QUESTION '+(testIndex+1)+' OF '+testWords.length;
+  document.getElementById('test-word-occ').textContent=w.occurrences+'x in Quran';
+  document.getElementById('test-arabic-word').textContent=w.arabic;
+  document.getElementById('test-translit').textContent=w.transliteration+' · PDF '+w.wordNumber;
+  document.getElementById('test-feedback').textContent='';
+  document.getElementById('test-feedback').className='feedback';
+  document.getElementById('test-next-btn').classList.remove('visible');
+  document.getElementById('test-progress-fill').style.width=((testIndex/testWords.length)*100)+'%';
+  const opts=shuffle([w.english,...getWrong(w,3)]);
+  const el=document.getElementById('test-choices');
+  el.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='choice-btn';b.textContent=o;
+    b.onclick=()=>handleTestAnswer(b,o,w.english,w);
+    el.appendChild(b);
+  });
+}
+
+function handleTestAnswer(btn,selected,correct,word){
+  if(testAnswered)return;
+  testAnswered=true;
+  document.querySelectorAll('#test-choices .choice-btn').forEach(b=>{b.disabled=true;if(b.textContent===correct)b.classList.add('correct');});
+  const ok=selected===correct;
+  if(ok){btn.classList.add('correct');testCorrect++;}
+  else btn.classList.add('wrong');
+  testResults.push({word,correct:ok});
+  const fb=document.getElementById('test-feedback');
+  fb.textContent=ok?'Correct!':'Answer: '+correct;
+  fb.className='feedback '+(ok?'correct':'wrong');
+  document.getElementById('test-next-btn').classList.add('visible');
+}
+
+function nextTestWord(){
+  testIndex++;
+  if(testIndex>=testWords.length)showTestComplete();
+  else showTestWord();
+}
+
+function showTestComplete(){
+  document.getElementById('test-session').classList.add('hidden');
+  document.getElementById('test-complete').classList.remove('hidden');
+  const pct=Math.round((testCorrect/testWords.length)*100);
+  document.getElementById('test-final-score').textContent=pct+'%';
+  document.getElementById('test-results').innerHTML=testResults.map(r=>
+    '<div class="result-item"><div class="result-arabic">'+r.word.arabic+'</div><div class="result-info"><div class="result-english">'+r.word.english+'</div><div class="result-ref">PDF '+r.word.wordNumber+' · '+r.word.ref+'</div></div><div style="font-size:18px">'+(r.correct?'✅':'❌')+'</div></div>'
+  ).join('');
+}
+
+startSession();
+</script>
+</body>
+</html>
