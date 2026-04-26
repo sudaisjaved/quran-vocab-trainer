@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glossary - Quran Vocab Trainer</title>
+<!--
+  ============================================================
+  GLOSSARY PAGE - Quran Vocabulary Trainer
+  Shows all 500 words from "The Top 500 Words" - Yaqeen Books
+  Words learned by user are highlighted in gold
+  Words not yet learned appear dimmed
+  ============================================================
+-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--gold:#c9a84c;--gold-light:#e8c97a;--green:#4caf82;--red:#e05252;--text:#f0ead6;--text-dim:#8a8fa8;--border:#2e3450}
+  body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px;background-image:radial-gradient(ellipse at 20% 20%,rgba(201,168,76,.06) 0%,transparent 60%)}
+  .header{text-align:center;margin-bottom:18px}
+  .header h1{font-family:'Amiri',serif;font-size:30px;color:var(--gold)}
+  .header p{color:var(--text-dim);font-size:12px;margin-top:4px}
+  .badge{display:inline-block;font-size:9px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:var(--gold);padding:2px 8px;border-radius:20px;margin-top:8px}
+  .nav{display:flex;gap:8px;margin-bottom:18px;background:var(--surface);border-radius:12px;padding:5px;border:1px solid var(--border)}
+  .nav button{padding:8px 18px;border-radius:8px;border:none;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;background:transparent;color:var(--text-dim)}
+  .nav button.active{background:var(--gold);color:#0f1117}
+  .filter-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  .filter-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;background:transparent;color:var(--text-dim)}
+  .filter-btn.active{background:var(--gold);color:#0f1117;border-color:var(--gold)}
+  .section-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);padding:8px 0 4px;opacity:.7}
+  .progress-section{width:100%;max-width:800px;margin-bottom:20px}
+  .progress-bar{width:100%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:8px}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:3px;transition:width .4s ease}
+  .progress-text{text-align:center;color:var(--text-dim);font-size:13px}
+  .glossary-container{width:100%;max-width:800px}
+  .glossary-grid{display:grid;gap:10px;grid-template-columns:1fr}
+  .word-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;transition:all .2s}
+  .word-item.learned{border-color:var(--gold);background:rgba(201,168,76,.1)}
+  .word-item.unlearned{opacity:.6}
+  .word-arabic{font-family:'Amiri',serif;font-size:24px;color:var(--gold-light);direction:rtl;text-align:right;min-width:60px;text-align:center}
+  .word-details{display:flex;flex-direction:column;gap:4px}
+  .word-main{display:flex;gap:8px;align-items:baseline}
+  .word-translit{color:var(--text-dim);font-size:12px;font-style:italic}
+  .word-english{font-size:14px;color:var(--text);font-weight:500}
+  .word-meta{display:flex;gap:12px;font-size:10px;color:var(--text-dim)}
+  .word-meta-item{display:flex;gap:3px}
+  .word-meta-label{font-weight:500}
+  .word-badge{font-size:11px;background:rgba(201,168,76,.15);color:var(--gold);padding:3px 8px;border-radius:6px;white-space:nowrap;text-align:center;min-width:50px}
+  .word-item.learned .word-badge{background:var(--gold);color:#0f1117}
+  .hidden{display:none}
+  @media(max-width:600px){
+    .glossary-grid{grid-template-columns:1fr}
+    .word-item{grid-template-columns:1fr}
+    .word-arabic{min-width:auto;margin-bottom:4px}
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>مُفردات القرآن</h1>
+  <p>Quranic Vocabulary Glossary</p>
+  <div class="badge" id="word-count-badge">Loading…</div>
+</div>
+<div class="nav">
+  <button onclick="window.location.href='index.html'" id="nav-learn">Learn</button>
+  <button onclick="window.location.href='index.html'" id="nav-test">Daily Test</button>
+  <button class="active" id="nav-glossary">Glossary</button>
+</div>
+<div class="progress-section">
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+  <div class="progress-text">
+    <span id="progress-text">0 of 500 words learned</span>
+  </div>
+</div>
+<div class="glossary-container">
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setFilter('all')">All</button>
+    <button class="filter-btn" onclick="setFilter('1')">Nouns &amp; Particles</button>
+    <button class="filter-btn" onclick="setFilter('2')">Verbs</button>
+  </div>
+  <div class="glossary-grid" id="glossary-grid"></div>
+</div>
+
+<script src="words_data.js"></script>
+<script>
+const ALL_WORDS = [...SECTION_1_WORDS, ...SECTION_2_VERBS];
+
+let learnedWords = [];
+let activeFilter = 'all';
+
+function loadProgress(){
+  const saved = localStorage.getItem('quranVocabProgress');
+  if(saved){
+    try{ learnedWords = JSON.parse(saved); }
+    catch(e){ console.error('Error loading progress:',e); }
+  }
+}
+
+function setFilter(val){
+  activeFilter = val;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderGlossary();
+}
+
+function updateProgress(){
+  const learned = learnedWords.length;
+  const total = ALL_WORDS.length;
+  const pct = total ? (learned/total)*100 : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = learned + ' of ' + total + ' words learned';
+  document.getElementById('word-count-badge').textContent =
+    SECTION_1_WORDS.length + ' Nouns & Particles · ' + SECTION_2_VERBS.length + ' Verbs';
+}
+
+function renderGlossary(){
+  const grid = document.getElementById('glossary-grid');
+  grid.innerHTML = '';
+  const words = activeFilter === 'all' ? ALL_WORDS
+    : ALL_WORDS.filter(w => String(w.section) === activeFilter);
+
+  const sectionNames = { 1:'Nouns & Particles', 2:'Verbs' };
+  let lastSection = null;
+
+  words.forEach(word => {
+    if(activeFilter === 'all' && word.section !== lastSection){
+      lastSection = word.section;
+      const lbl = document.createElement('div');
+      lbl.className = 'section-label';
+      lbl.textContent = sectionNames[word.section] || ('Section ' + word.section);
+      grid.appendChild(lbl);
+    }
+    const isLearned = learnedWords.some(w => w.arabic === word.arabic);
+    const div = document.createElement('div');
+    div.className = 'word-item ' + (isLearned ? 'learned' : 'unlearned');
+    const occ = word.occurrences > 0 ? word.occurrences + 'x' : '—';
+    div.innerHTML = `
+      <div class="word-arabic">${word.arabic}</div>
+      <div class="word-details">
+        <div class="word-english">${word.english}</div>
+        <div class="word-meta">
+          <div class="word-meta-item"><span class="word-meta-label">${word.wordNumber}</span></div>
+          ${word.occurrences > 0 ? '<div class="word-meta-item"><span class="word-meta-label">Appears:</span> ' + occ + '</div>' : ''}
+        </div>
+      </div>
+      <div class="word-badge">${word.transliteration}</div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function initPage(){
+  loadProgress();
+  updateProgress();
+  renderGlossary();
+}
+
+initPage();
+</script>
+</body>
+</html>

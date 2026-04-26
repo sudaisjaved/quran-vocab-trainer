@@ -95,6 +95,7 @@
 <div class="nav">
   <button class="active" onclick="showMode('learn')" id="nav-learn">Learn</button>
   <button onclick="showMode('test')" id="nav-test">Daily Test</button>
+  <button onclick="window.location.href='glossary.html'" id="nav-glossary">Glossary</button>
 </div>
 <div id="learn-mode">
   <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
@@ -216,6 +217,23 @@ let sessionWords=[],currentIndex=0,correctCount=0,streak=0,totalDone=0;
 let learnedWords=[],answered=false;
 let testWords=[],testIndex=0,testCorrect=0,testAnswered=false,testResults=[];
 
+// localStorage functions
+function saveProgress(){
+  localStorage.setItem('quranVocabProgress',JSON.stringify(learnedWords));
+}
+
+function loadProgress(){
+  const saved=localStorage.getItem('quranVocabProgress');
+  if(saved){
+    try{
+      learnedWords=JSON.parse(saved);
+      document.getElementById('stat-learned').textContent=learnedWords.length;
+    }catch(e){
+      console.error('Error loading progress:',e);
+    }
+  }
+}
+
 function showMode(m){
   document.getElementById('learn-mode').classList.toggle('hidden',m!=='learn');
   document.getElementById('test-mode').classList.toggle('hidden',m!=='test');
@@ -282,7 +300,7 @@ function handleAnswer(btn,selected,correct,word){
     fb.textContent='Correct! ما شاء الله';
     fb.className='feedback correct';
     correctCount++;streak++;
-    if(!learnedWords.find(l=>l.arabic===word.arabic)){learnedWords.push(word);document.getElementById('stat-learned').textContent=learnedWords.length;}
+    if(!learnedWords.find(l=>l.arabic===word.arabic)){learnedWords.push(word);document.getElementById('stat-learned').textContent=learnedWords.length;saveProgress();}
   }else{
     btn.classList.add('wrong');
     fb.textContent='Answer: '+correct;
@@ -374,6 +392,7 @@ function showTestComplete(){
   ).join('');
 }
 
+loadProgress();
 startSession();
 </script>
 </body>
